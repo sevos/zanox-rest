@@ -31,9 +31,16 @@ module Zanox
         signature = Zanox::API.create_signature @@secret_key,
             verb + method.downcase + timestamp + nonce
 
+
         options.merge!(:date => timestamp,
                        :signature => signature,
                        :nonce => nonce)
+
+        puts timestamp, nonce, signature
+        puts "--------"
+        puts @@endpoint + method
+        puts "--------"
+        puts options.inspect
 
         response = get @@endpoint + method, :query => options
 
@@ -58,7 +65,14 @@ module Zanox
 
     def self.create_signature(secret_key, string2sign)
       puts string2sign if @@debug_output
-      Base64.encode64(HMAC::SHA1.new(@@secret_key).update(string2sign).digest)[0..-2]
+      hmac_sha1 = HMAC::SHA1.new(@@secret_key).update(string2sign).digest
+      base64_encoded = Base64.encode64(hmac_sha1)
+      puts "%%%%%%%%%%%%%%%"
+      puts "payload: #{string2sign}"
+      puts "hmac_sha1: #{hmac_sha1}"
+      puts "base64: #{base64_encoded}"
+      puts "%%%%%%%%%%%%%%%"
+      base64_encoded[0..-2]
     end
 
     def self.format_date (date)
@@ -103,22 +117,22 @@ module Zanox
 
   class Response
     def initialize (hash)
+      puts hash.inspect
+      # hash.each do |key,value|
+      #   define_singleton_method(key.to_s.gsub(/@/,'').gsub(/\$/,'value').underscore) do
+      #     if value.instance_of? Hash
+      #       Zanox::Response.new(value)
+      #     elsif value.instance_of? Array
+      #       value.map { |x| Zanox::Response.new(x) }
+      #     else
+      #       value
+      #     end
+      #   end
+      # end
 
-      hash.each do |key,value|
-        define_singleton_method(key.gsub(/@/,'').gsub(/\$/,'value').underscore) do
-          if value.instance_of? Hash
-            Zanox::Response.new(value)
-          elsif value.instance_of? Array
-            value.map { |x| Zanox::Response.new(x) }
-          else
-            value
-          end
-        end
-      end
-
-      define_singleton_method("to_hash") do
-        hash
-      end
+      # define_singleton_method("to_hash") do
+      #   hash
+      # end
     end
   end
 end
